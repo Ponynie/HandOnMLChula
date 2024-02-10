@@ -158,9 +158,33 @@ def model_training():
     r2_value = r2_score(data_big_target_test, ensemble_prediction)
     formatted_r2_value = "{:.4f}".format(r2_value)
     print(f'Ensemble R-squared value: {formatted_r2_value}')
+    
+    def ensemble_model(data_features):
+        linear_model_prediction = linear_model.predict(data_features)
+        tree_model_prediction = tree_model.predict(data_features)
+        forest_model_prediction = forest_model.predict(data_features)
+        boost_model_prediction = boost_model.predict(data_features)
+        with torch.no_grad():
+            neural_model_prediction = net(torch.tensor(data_features.values, dtype=torch.float32)).squeeze().detach().numpy()
+        ensemble_prediction = (weights[0] * linear_model_prediction +
+                            weights[1] * tree_model_prediction +
+                            weights[2] * forest_model_prediction +
+                            weights[3] * boost_model_prediction +
+                            weights[4] * neural_model_prediction)
+        return ensemble_prediction
 
+    return ensemble_model
+
+def model_testing():
+    import pandas as pd
+    summit = pd.DataFrame()
+    data = pd.read_csv("Kaggle/df_test (1).csv")
+    summit['Id'] = data['Id']
+    data = data.drop(['Id'], axis=1)
+    model = model_training()
+    predict = model(data)
+    summit['SalePrice'] = predict
+    summit.to_csv('Kaggle/summit.csv', index=False)
     
     
-
-
-model_training()
+model_testing()
